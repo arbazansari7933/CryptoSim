@@ -1,0 +1,87 @@
+import express from "express";
+import dotenv from "dotenv";
+import connectDB from "./config/db.js";
+import cors from "cors";
+import http from "http";
+import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import authRoutes from "./routes/authRoutes.js";
+//import socket from "./socket.js";
+
+
+//dotenv.config();
+connectDB();
+
+const app = express();
+const server=http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
+
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+
+app.use("/api/auth", authRoutes);
+
+app.get("/api", (req, res) => {
+  res.send("Backend is running!");
+});
+
+
+io.use((socket, next)=>{
+  const token=socket.handshake.auth.token;
+  try {
+    const decoded=jwt.verify(
+      token, process.env.JWT_SECRET
+    );
+    socket.user=decoded;
+    next();
+  } catch (error) {
+    next(new Error("Authentication Failed"));
+  }
+})
+const onlineUsers={};
+io.on("connection", (socket) => {
+ // console.log("Socket Connected");
+ // console.log(socket.user);
+ const userId=socket.user.id;
+ onlineUsers[userId]=socket.id;
+ console.log(
+    "Count =",
+    Object.keys(onlineUsers).length
+  );
+ 
+socket.on("disconnect", ()=>{
+console.log(
+    `${userId} disconnected`
+  );
+
+  delete onlineUsers[userId];
+  console.log("onlineUsers =", onlineUsers);
+
+    console.log(
+      "Count =",
+      Object.keys(onlineUsers).length
+    );
+
+ // console.log("Online User :", onlineUsers.length);
+ })
+  
+});
+
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/api`);
+});
