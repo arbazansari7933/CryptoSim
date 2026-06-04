@@ -6,6 +6,7 @@ import {
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Portfolio from "./pages/Portfolio";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -25,6 +26,14 @@ function App() {
         path="/register"
         element={<Register />}
       />
+      <Route
+  path="/portfolio"
+  element={
+    <ProtectedRoute>
+      <Portfolio />
+    </ProtectedRoute>
+  }
+/>
 
       <Route
         path="/dashboard"
@@ -35,6 +44,7 @@ function App() {
         }
       />
     </Routes>
+    
   );
 }
 

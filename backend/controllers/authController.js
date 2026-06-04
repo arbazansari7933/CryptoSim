@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import Portfolio from "../models/Portfolio.js";
 
 export const register = async (req, res) => {
     try {
@@ -21,11 +22,14 @@ export const register = async (req, res) => {
                 password: hashedPassword
             }
         );
+        await Portfolio.create({
+            userId: newUser.id,
+        })
         //response
         return res.status(200).json(
 
             {
-                message: "Register Successfully ! ",
+                message: "Register Successfully and Portfolio also created !",
                 userId: newUser._id,
 
             }

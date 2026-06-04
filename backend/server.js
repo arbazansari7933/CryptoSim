@@ -6,6 +6,11 @@ import http from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import authRoutes from "./routes/authRoutes.js";
+import portfolioRoutes from "./routes/portfolioRoutes.js";
+import tradeRoutes from "./routes/tradeRoutes.js";
+
+import { startMarketEngine } from "./market/marketEngine.js";
+import { marketState } from "./market/marketState.js";
 //import socket from "./socket.js";
 
 
@@ -33,6 +38,9 @@ app.use(
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/auth/portfolio", portfolioRoutes);
+app.use("/api/auth/trade", tradeRoutes);
+
 
 app.get("/api", (req, res) => {
   res.send("Backend is running!");
@@ -74,11 +82,14 @@ console.log(
       "Count =",
       Object.keys(onlineUsers).length
     );
-
+   
  // console.log("Online User :", onlineUsers.length);
  })
+ socket.emit("marketUpdate", marketState);
   
 });
+    startMarketEngine(io);
+
 
 const PORT = process.env.PORT || 5000;
 
