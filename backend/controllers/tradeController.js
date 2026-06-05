@@ -18,7 +18,6 @@ export const buyCoin = async (req, res) => {
 
         const costToBuy = currentPrice * quantity;
 
-        console.log("2");
 
         const user = await User.findById(req.user._id);
         if ((user.walletBalance) < costToBuy) {
