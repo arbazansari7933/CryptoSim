@@ -1,6 +1,7 @@
 import { marketState } from "../market/marketState.js";
 import Portfolio from "../models/Portfolio.js";
 import User from "../models/User.js";
+import Transaction from "../models/Transaction.js";
 
 
 export const buyCoin = async (req, res) => {
@@ -17,16 +18,21 @@ export const buyCoin = async (req, res) => {
 
         const costToBuy = currentPrice * quantity;
 
+        console.log("2");
+
         const user = await User.findById(req.user._id);
         if ((user.walletBalance) < costToBuy) {
             return res.status(401).json({
                 message: "Insufficient Balance"
             })
         }
+
         user.walletBalance -= costToBuy;
 
         const portfolio = await Portfolio.findOne({ userId: req.user._id });
         const oldQuantity = portfolio[coin].quantity;
+
+
         const oldAvgPrice = portfolio[coin].avgBuyPrice;
 
         const totalQuantity = oldQuantity + quantity;
@@ -39,14 +45,22 @@ export const buyCoin = async (req, res) => {
 
         portfolio[coin].quantity = totalQuantity;
         portfolio[coin].avgBuyPrice = newAvgPrice;
-
+        const tx=await Transaction.create({
+            userId: req.user._id,
+            coin,
+            type: "BUY",
+            quantity,
+            price: currentPrice,
+            totalAmount: costToBuy,
+        });
         await user.save();
         await portfolio.save();
 
         res.status(200).json({
             message: "Transaction Successfully !",
             user,
-            portfolio
+            portfolio,
+            tx
         })
 
     }
@@ -75,7 +89,7 @@ export const sellCoin = async (req, res) => {
                 }
             )
         }
-        
+
         if (quantity <= 0) {
             return res.status(400).json({
                 message: "Invalid Quantity"
@@ -97,13 +111,22 @@ export const sellCoin = async (req, res) => {
         if (portfolio[coin].quantity === 0) {
             portfolio[coin].avgBuyPrice = 0;
         }
+        const tx=await Transaction.create({
+            userId: req.user._id,
+            coin,
+            type: "SELL",
+            quantity,
+            price: currentPrice,
+            totalAmount: sellValue,
+        });
         await user.save();
         await portfolio.save();
 
         res.status(200).json({
             message: "Transaction Successfully !",
             user,
-            portfolio
+            portfolio,
+            tx
         })
 
     }

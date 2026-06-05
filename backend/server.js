@@ -8,7 +8,8 @@ import jwt from "jsonwebtoken";
 import authRoutes from "./routes/authRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 import tradeRoutes from "./routes/tradeRoutes.js";
-
+import transactionRoutes from "./routes/transactionRoutes.js";
+import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import { startMarketEngine } from "./market/marketEngine.js";
 import { marketState } from "./market/marketState.js";
 //import socket from "./socket.js";
@@ -40,7 +41,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/auth/portfolio", portfolioRoutes);
 app.use("/api/auth/trade", tradeRoutes);
-
+app.use( "/api/auth/transactions", transactionRoutes );
+app.use( "/api/auth/leaderboard", leaderboardRoutes );
 
 app.get("/api", (req, res) => {
   res.send("Backend is running!");

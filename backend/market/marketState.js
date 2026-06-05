@@ -1,5 +1,8 @@
 export const marketState = {
-  BTC: 100000,
-  ETH: 3000,
-  SOL: 150,
+  BTC: 0,
+  ETH: 0,
+  SOL: 0,
+  DOGE: 0,
+  ADA: 0,
+  XRP: 0,
 };
