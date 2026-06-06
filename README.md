@@ -55,7 +55,7 @@ All without risking actual funds.
 - JWT Authentication
 - Protected Routes
 
-### 📈 Live Market
+### Live Market
 
 - Live prices from CoinGecko
 - Updates every 30 seconds
