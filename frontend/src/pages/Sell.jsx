@@ -20,7 +20,7 @@ const Sell = () => {
     } catch (error) {
       setMessage(
         error.response?.data?.message ||
-          "Something went wrong"
+        "Something went wrong"
       );
     }
   };
@@ -44,9 +44,12 @@ const Sell = () => {
           onChange={(e) => setCoin(e.target.value)}
           className="w-full p-2 rounded text-white mb-4"
         >
-          <option>BTC</option>
-          <option>ETH</option>
-          <option>SOL</option>
+          <option value="BTC">BTC</option>
+          <option value="ETH">ETH</option>
+          <option value="SOL">SOL</option>
+          <option value="DOGE">DOGE</option>
+          <option value="ADA">ADA</option>
+          <option value="XRP">XRP</option>
         </select>
 
         <label className="block mb-2">

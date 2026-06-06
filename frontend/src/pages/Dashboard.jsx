@@ -2,6 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import socket from "../services/socket";
 import api from "../services/api";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -14,11 +22,17 @@ const Dashboard = () => {
     ADA: 0,
     XRP: 0,
   });
-  const [analytics, setAnalytics] = useState({
-    portfolioValue: 0,
-    investedValue: 0,
-    profitLoss: 0,
-  });
+  const [priceHistory, setPriceHistory] = useState({
+  BTC: [],
+  ETH: [],
+  SOL: [],
+  DOGE: [],
+  ADA: [],
+  XRP: [],
+});
+const [selectedCoin, setSelectedCoin] =
+  useState("BTC");
+ 
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -32,43 +46,30 @@ const Dashboard = () => {
 
     socket.on("marketUpdate", (data) => {
       setMarket(data);
+      setPriceHistory((prev)=>{
+        const updated={...prev};
+        Object.keys(data).forEach((coin)=>{
+          updated[coin]=[...updated[coin], data[coin]];
+          if(updated[coin].length>20){
+            updated[coin].shift();
+          }
+        });
+        return updated;
+      })
     });
+
 
     return () => {
       socket.off("connect");
       socket.off("marketUpdate");
     };
   }, []);
-  const [portfolio, setPortfolio] = useState(null);
-
-  useEffect(() => {
-    const fetchPortfolio = async () => {
-      const res = await api.get("auth/portfolio");
-      setPortfolio(res.data.portfolio);
-    };
-
-    fetchPortfolio();
-  }, []);
-
-  useEffect(() => {
-    if (!portfolio) return;
-    let invested = 0;
-    let currentValue = 0;
-    invested += portfolio.BTC.quantity * portfolio.BTC.avgBuyPrice;
-    invested += portfolio.ETH.quantity * portfolio.ETH.avgBuyPrice;
-    invested += portfolio.SOL.quantity * portfolio.SOL.avgBuyPrice;
-
-    currentValue += portfolio.BTC.quantity * market.BTC;
-    currentValue += portfolio.ETH.quantity * market.ETH;
-    currentValue += portfolio.SOL.quantity * market.SOL;
-
-    setAnalytics({
-      portfolioValue: currentValue,
-      investedValue: invested,
-      profitLoss: currentValue - invested
+  const chartData=priceHistory[selectedCoin].map(
+    (price, index)=>({
+      time:index+1,
+      price,
     })
-  }, [market, portfolio])
-
+  )
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
@@ -144,36 +145,42 @@ const Dashboard = () => {
         ))}
 
       </div>
-      <div className="grid md:grid-cols-3 gap-6 mt-8">
+      <select
+  value={selectedCoin}
+  onChange={(e) =>
+    setSelectedCoin(e.target.value)
+  }
+  className="bg-slate-900 p-2 rounded mt-8 mb-4"
+>
+  {Object.keys(market).map((coin) => (
+    <option key={coin}>
+      {coin}
+    </option>
+  ))}
+</select>
 
-        <div className="bg-slate-900 p-6 rounded-xl">
-          <h2>Portfolio Value</h2>
-          <p className="text-2xl font-bold">
-            ₹{analytics.portfolioValue.toFixed(2)}
-          </p>
-        </div>
+<div className="mt-6 bg-slate-900 p-6 rounded-xl">
+  <h2 className="text-2xl font-bold mb-4">
+    {selectedCoin} Price History
+  </h2>
 
-        <div className="bg-slate-900 p-6 rounded-xl">
-          <h2>Invested Value</h2>
-          <p className="text-2xl font-bold">
-            ₹{analytics.investedValue.toFixed(2)}
-          </p>
-        </div>
+  <ResponsiveContainer
+    width="100%"
+    height={300}
+  >
+    <LineChart data={chartData}>
+      <XAxis dataKey="time" />
+      <YAxis />
+      <Tooltip />
 
-        <div className="bg-slate-900 p-6 rounded-xl">
-          <h2>Profit / Loss</h2>
-
-          <p
-            className={`text-2xl font-bold ${analytics.profitLoss >= 0
-                ? "text-green-500"
-                : "text-red-500"
-              }`}
-          >
-            ₹{analytics.profitLoss.toFixed(2)}
-          </p>
-        </div>
-
-      </div>
+      <Line
+        type="monotone"
+        dataKey="price"
+        stroke="#22c55e"
+      />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
 
     </div>
   );
