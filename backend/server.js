@@ -13,13 +13,14 @@ import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import { startMarketEngine } from "./market/marketEngine.js";
 import { marketState } from "./market/marketState.js";
 //import socket from "./socket.js";
+import { marketHistory } from "./market/marketState.js";
 
 
 //dotenv.config();
 connectDB();
 
 const app = express();
-const server=http.createServer(app);
+const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
@@ -41,56 +42,59 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/auth/portfolio", portfolioRoutes);
 app.use("/api/auth/trade", tradeRoutes);
-app.use( "/api/auth/transactions", transactionRoutes );
-app.use( "/api/auth/leaderboard", leaderboardRoutes );
+app.use("/api/auth/transactions", transactionRoutes);
+app.use("/api/auth/leaderboard", leaderboardRoutes);
 
 app.get("/api", (req, res) => {
   res.send("Backend is running!");
 });
 
 
-io.use((socket, next)=>{
-  const token=socket.handshake.auth.token;
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
   try {
-    const decoded=jwt.verify(
+    const decoded = jwt.verify(
       token, process.env.JWT_SECRET
     );
-    socket.user=decoded;
+    socket.user = decoded;
     next();
   } catch (error) {
     next(new Error("Authentication Failed"));
   }
 })
-const onlineUsers={};
+const onlineUsers = {};
 io.on("connection", (socket) => {
- // console.log("Socket Connected");
- // console.log(socket.user);
- const userId=socket.user.id;
- onlineUsers[userId]=socket.id;
- console.log(
-    "Count =",
-    Object.keys(onlineUsers).length
-  );
- 
-socket.on("disconnect", ()=>{
-console.log(
-    `${userId} disconnected`
-  );
+  // console.log("Socket Connected");
+  // console.log(socket.user);
+  const userId = socket.user.id;
+  onlineUsers[userId] = socket.id;
+  //  console.log(
+  //     "Count =",
+  //     Object.keys(onlineUsers).length
+  //   );
 
-  delete onlineUsers[userId];
-  console.log("onlineUsers =", onlineUsers);
+  socket.on("disconnect", () => {
+    // console.log(
+    //     `${userId} disconnected`
+    //   );
 
-    console.log(
-      "Count =",
-      Object.keys(onlineUsers).length
-    );
-   
- // console.log("Online User :", onlineUsers.length);
- })
- socket.emit("marketUpdate", marketState);
-  
+    delete onlineUsers[userId];
+    // console.log("onlineUsers =", onlineUsers);
+
+    //   console.log(
+    //     "Count =",
+    //     Object.keys(onlineUsers).length
+    //   );
+
+    // console.log("Online User :", onlineUsers.length);
+  })
+  socket.emit("marketUpdate", marketState);
+  socket.emit("marketHistory", marketHistory);
+  console.log("History sent:");
+console.log(marketHistory);
+
 });
-    startMarketEngine(io);
+startMarketEngine(io);
 
 
 const PORT = process.env.PORT || 5000;

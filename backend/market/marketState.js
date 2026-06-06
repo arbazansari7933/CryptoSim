@@ -6,3 +6,12 @@ export const marketState = {
   ADA: 0,
   XRP: 0,
 };
+
+export const marketHistory={
+  BTC: [],
+  ETH: [],
+  SOL: [],
+  DOGE: [],
+  ADA: [],
+  XRP: [],
+}

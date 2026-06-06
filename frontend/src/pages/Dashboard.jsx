@@ -23,16 +23,16 @@ const Dashboard = () => {
     XRP: 0,
   });
   const [priceHistory, setPriceHistory] = useState({
-  BTC: [],
-  ETH: [],
-  SOL: [],
-  DOGE: [],
-  ADA: [],
-  XRP: [],
-});
-const [selectedCoin, setSelectedCoin] =
-  useState("BTC");
- 
+    BTC: [],
+    ETH: [],
+    SOL: [],
+    DOGE: [],
+    ADA: [],
+    XRP: [],
+  });
+  const [selectedCoin, setSelectedCoin] =
+    useState("BTC");
+
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -43,33 +43,35 @@ const [selectedCoin, setSelectedCoin] =
     socket.on("connect", () => {
       console.log("Frontend Connected");
     });
-
+    socket.onAny((event, ...args) => {
+  console.log("EVENT:", event);
+  console.log(args);
+});
     socket.on("marketUpdate", (data) => {
       setMarket(data);
-      setPriceHistory((prev)=>{
-        const updated={...prev};
-        Object.keys(data).forEach((coin)=>{
-          updated[coin]=[...updated[coin], data[coin]];
-          if(updated[coin].length>20){
-            updated[coin].shift();
-          }
-        });
-        return updated;
-      })
     });
-
-
+    socket.on("marketHistory", (data) => {
+      console.log("RECEIVED FROM  SOCKET:");
+      console.log(data);
+      console.log("Market History:", data);
+      setPriceHistory(data);
+    });
     return () => {
       socket.off("connect");
       socket.off("marketUpdate");
+      socket.off("marketHistory");
     };
   }, []);
-  const chartData=priceHistory[selectedCoin].map(
-    (price, index)=>({
-      time:index+1,
-      price,
-    })
-  )
+  console.log("CURRENT PRICE HISTORY");
+  console.log(priceHistory);
+  const chartData = (
+    priceHistory?.[selectedCoin] || []
+  ).map((price, index) => ({
+    time: index + 1,
+    price,
+  }));
+  console.log("selectedCoin:", selectedCoin);
+  console.log("priceHistory:", priceHistory);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
@@ -146,41 +148,41 @@ const [selectedCoin, setSelectedCoin] =
 
       </div>
       <select
-  value={selectedCoin}
-  onChange={(e) =>
-    setSelectedCoin(e.target.value)
-  }
-  className="bg-slate-900 p-2 rounded mt-8 mb-4"
->
-  {Object.keys(market).map((coin) => (
-    <option key={coin}>
-      {coin}
-    </option>
-  ))}
-</select>
+        value={selectedCoin}
+        onChange={(e) =>
+          setSelectedCoin(e.target.value)
+        }
+        className="bg-slate-900 p-2 rounded mt-8 mb-4"
+      >
+        {Object.keys(market).map((coin) => (
+          <option key={coin}>
+            {coin}
+          </option>
+        ))}
+      </select>
 
-<div className="mt-6 bg-slate-900 p-6 rounded-xl">
-  <h2 className="text-2xl font-bold mb-4">
-    {selectedCoin} Price History
-  </h2>
+      <div className="mt-6 bg-slate-900 p-6 rounded-xl">
+        <h2 className="text-2xl font-bold mb-4">
+          {selectedCoin} Price History
+        </h2>
 
-  <ResponsiveContainer
-    width="100%"
-    height={300}
-  >
-    <LineChart data={chartData}>
-      <XAxis dataKey="time" />
-      <YAxis />
-      <Tooltip />
+        <ResponsiveContainer
+          width="100%"
+          height={300}
+        >
+          <LineChart data={chartData}>
+            <XAxis dataKey="time" />
+            <YAxis />
+            <Tooltip />
 
-      <Line
-        type="monotone"
-        dataKey="price"
-        stroke="#22c55e"
-      />
-    </LineChart>
-  </ResponsiveContainer>
-</div>
+            <Line
+              type="monotone"
+              dataKey="price"
+              stroke="#22c55e"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
 
     </div>
   );

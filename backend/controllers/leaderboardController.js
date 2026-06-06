@@ -19,9 +19,12 @@ export const getLeaderboard = async (req, res) => {
             console.log(user.name);
             console.log(portfolio);
             let portfolioValue = 0;
-            portfolioValue += portfolio.BTC.quantity * marketState.BTC;
-            portfolioValue += portfolio.ETH.quantity * marketState.ETH;
-            portfolioValue += portfolio.SOL.quantity * marketState.SOL;
+           Object.keys(marketState).forEach((coin)=>{
+            if(portfolio[coin]){
+                portfolioValue+=portfolio[coin].quantity *
+                marketState[coin];
+            }
+           });
             const totalValue = user.walletBalance + portfolioValue;
             leaderboard.push({
                 name: user.name,
