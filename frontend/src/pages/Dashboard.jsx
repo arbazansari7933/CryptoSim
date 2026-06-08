@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import socket from "../services/socket";
 import api from "../services/api";
+
 import {
   LineChart,
   Line,
@@ -30,6 +31,8 @@ const Dashboard = () => {
     ADA: [],
     XRP: [],
   });
+  const [prevMarket, setPrevMarket] = useState({});
+
   const [selectedCoin, setSelectedCoin] =
     useState("BTC");
 
@@ -44,11 +47,14 @@ const Dashboard = () => {
       console.log("Frontend Connected");
     });
     socket.onAny((event, ...args) => {
-  console.log("EVENT:", event);
-  console.log(args);
-});
+      console.log("EVENT:", event);
+      console.log(args);
+    });
     socket.on("marketUpdate", (data) => {
-      setMarket(data);
+      setMarket((currentMarket) => {
+        setPrevMarket(currentMarket);
+        return data;
+      });
     });
     socket.on("marketHistory", (data) => {
       console.log("RECEIVED FROM  SOCKET:");
@@ -110,17 +116,24 @@ const Dashboard = () => {
             History
           </button>
           <button
+            onClick={() => navigate("/orders")}
+            className="bg-cyan-600 px-4 py-2 rounded-lg"
+          >
+            Orders
+          </button>
+          <button
             onClick={() => navigate("/leaderboard")}
             className="bg-yellow-500 text-black px-4 py-2 rounded"
           >
             Leaderboard
           </button>
-
           <button
-            onClick={logout}
-            className="bg-red-500 px-4 py-2 rounded-lg"
+            onClick={() =>
+              navigate("/settings")
+            }
+            className="bg-slate-700 px-4 py-2 rounded-lg"
           >
-            Logout
+            Settings
           </button>
         </div>
       </div>
@@ -131,21 +144,43 @@ const Dashboard = () => {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {Object.entries(market).map(([coin, price]) => (
-          <div
-            key={coin}
-            className="bg-slate-900 p-5 rounded-xl border border-slate-800"
-          >
-            <p className="text-slate-400 text-sm">
-              {coin}
-            </p>
+        {Object.entries(market).map(([coin, price]) => {
 
-            <p className="text-2xl font-bold mt-2">
-              ₹ {Number(price).toLocaleString()}
-            </p>
-          </div>
-        ))}
+          const change = prevMarket[coin]
+            ? (
+              ((price - prevMarket[coin]) /
+                prevMarket[coin]) *
+              100
+            ).toFixed(2)
+            : null;
 
+          return (
+            <div
+              key={coin}
+              className="bg-slate-900 p-5 rounded-xl border border-slate-800"
+            >
+              <p className="text-slate-400 text-sm">
+                {coin}
+              </p>
+              <p className="text-2xl font-bold mt-2">
+                ₹ {Number(price).toLocaleString()}
+              </p>
+
+              {change !== null && (
+                <p
+                  className={
+                    change >= 0
+                      ? "text-green-400 text-sm"
+                      : "text-red-400 text-sm"
+                  }
+                >
+                  {change >= 0 ? "▲" : "▼"}{" "}
+                  {Math.abs(change)}%
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
       <select
         value={selectedCoin}

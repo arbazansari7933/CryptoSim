@@ -12,19 +12,22 @@ import transactionRoutes from "./routes/transactionRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import { startMarketEngine } from "./market/marketEngine.js";
 import { marketState } from "./market/marketState.js";
+import resetRoutes from "./routes/resetRoutes.js";
 //import socket from "./socket.js";
 import { marketHistory } from "./market/marketState.js";
-
+import orderRoutes from "./routes/orderRoutes.js";
 
 //dotenv.config();
 connectDB();
 
 const app = express();
 const server = http.createServer(app);
+console.log("CLIENT_URI =", process.env.CLIENT_URI);
+
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URI,
     credentials: true,
   },
 });
@@ -32,7 +35,7 @@ const io = new Server(server, {
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URI,
     credentials: true,
   })
 );
@@ -44,6 +47,8 @@ app.use("/api/auth/portfolio", portfolioRoutes);
 app.use("/api/auth/trade", tradeRoutes);
 app.use("/api/auth/transactions", transactionRoutes);
 app.use("/api/auth/leaderboard", leaderboardRoutes);
+app.use( "/api/auth", resetRoutes );
+app.use( "/api/auth/orders", orderRoutes );
 
 app.get("/api", (req, res) => {
   res.send("Backend is running!");
@@ -90,8 +95,6 @@ io.on("connection", (socket) => {
   })
   socket.emit("marketUpdate", marketState);
   socket.emit("marketHistory", marketHistory);
-  console.log("History sent:");
-console.log(marketHistory);
 
 });
 startMarketEngine(io);

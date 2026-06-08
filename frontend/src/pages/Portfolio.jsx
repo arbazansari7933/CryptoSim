@@ -84,25 +84,69 @@ const Portfolio = () => {
       </h1>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {Object.keys(market).map((coin) => (
-          <div
-            key={coin}
-            className="bg-slate-900 p-6 rounded-xl"
-          >
-            <h2 className="text-xl mb-3">
-              {coin}
-            </h2>
+        {Object.keys(market).map((coin) => {
 
-            <p>
-              Quantity: {portfolio?.[coin]?.quantity || 0}
-            </p>
+          const quantity =
+            portfolio?.[coin]?.quantity || 0;
 
-            <p>
-              Avg Buy Price:
-              ₹{portfolio?.[coin]?.avgBuyPrice || 0}
-            </p>
-          </div>
-        ))}
+          const avgBuyPrice =
+            portfolio?.[coin]?.avgBuyPrice || 0;
+
+          const currentValue =
+            quantity * market[coin];
+
+          const invested =
+            quantity * avgBuyPrice;
+
+          const pnl =
+            currentValue - invested;
+
+          const pnlPercent =
+            invested > 0
+              ? ((pnl / invested) * 100).toFixed(2)
+              : 0;
+
+          return (
+            <div
+              key={coin}
+              className="bg-slate-900 p-6 rounded-xl"
+            >
+              <h2 className="text-xl mb-3">
+                {coin}
+              </h2>
+
+              <p>
+                Quantity: {quantity}
+              </p>
+
+              <p>
+                Avg Buy Price: ₹{avgBuyPrice}
+              </p>
+
+              {quantity > 0 && (
+                <>
+                  <p>
+                    Current Value:
+                    ₹{currentValue.toFixed(2)}
+                  </p>
+
+                  <p
+                    className={
+                      pnl >= 0
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }
+                  >
+                    P&L:
+                    {pnl >= 0 ? " ▲ " : " ▼ "}
+                    ₹{Math.abs(pnl).toFixed(2)}
+                    ({pnlPercent}%)
+                  </p>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
       <div className="grid md:grid-cols-3 gap-6 mt-8">
 
@@ -125,8 +169,8 @@ const Portfolio = () => {
 
           <p
             className={`text-2xl font-bold ${analytics.profitLoss >= 0
-                ? "text-green-500"
-                : "text-red-500"
+              ? "text-green-500"
+              : "text-red-500"
               }`}
           >
             ₹{analytics.profitLoss.toFixed(2)}

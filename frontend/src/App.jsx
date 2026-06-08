@@ -11,6 +11,8 @@ import Buy from "./pages/Buy";
 import Sell from "./pages/Sell";
 import History from "./pages/History";
 import Leaderboard from "./pages/Leaderboard";
+import Settings from "./pages/Settings";
+import Orders from "./pages/Orders";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -25,6 +27,8 @@ function App() {
       <Route path="/sell" element={<ProtectedRoute><Sell /></ProtectedRoute>} />
       <Route path="/history" element={ <ProtectedRoute> <History /> </ProtectedRoute> } />
       <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/orders" element={ <ProtectedRoute> <Orders /> </ProtectedRoute> } />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /></Routes>
       
   );
