@@ -19,15 +19,16 @@ import orderRoutes from "./routes/orderRoutes.js";
 
 //dotenv.config();
 await connectDB();
+const allowedOrigins = process.env.CLIENT_URI.split(",");
 
 const app = express();
 const server = http.createServer(app);
-console.log("CLIENT_URI =", process.env.CLIENT_URI);
+// console.log("CLIENT_URI =", process.env.CLIENT_URI);
 
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URI,
+    origin: allowedOrigins,
     credentials: true,
   },
 });
@@ -35,7 +36,7 @@ const io = new Server(server, {
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URI,
+    origin: allowedOrigins,
     credentials: true,
   })
 );
