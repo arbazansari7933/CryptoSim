@@ -18,7 +18,7 @@ import { marketHistory } from "./market/marketState.js";
 import orderRoutes from "./routes/orderRoutes.js";
 
 //dotenv.config();
-connectDB();
+await connectDB();
 
 const app = express();
 const server = http.createServer(app);
