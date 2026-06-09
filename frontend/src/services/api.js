@@ -1,7 +1,8 @@
 import axios from "axios";
 
+
 const api = axios.create({
-    baseURL: "https://cryptosim-t6b4.onrender.com/api",
+    baseURL: import.meta.env.BACKEND_URI,
 });
 
 api.interceptors.request.use(
