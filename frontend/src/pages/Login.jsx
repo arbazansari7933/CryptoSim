@@ -2,156 +2,118 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
+
 const Login = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const [message, setMessage] = useState("");
-    const [loading, setLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm();
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
+      setMessage("");
+      const res = await api.post("/auth/login", data);
+      localStorage.setItem("token", res.data.token);
+      navigate("/dashboard");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const onSubmit = async (data) => {
-        try {
-            setLoading(true);
-            setMessage("");
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
 
-            const res = await api.post(
-                "/auth/login",
-                data
-            );
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <p className="text-xl font-bold tracking-widest text-white uppercase">
+            Crypto<span className="text-emerald-400">Sim</span>
+          </p>
+          <p className="text-xs text-slate-500 mt-2">
+            Simulated trading · no real money
+          </p>
+        </div>
 
-            localStorage.setItem(
-                "token",
-                res.data.token
-            );
+        {/* Card */}
+        <div className="bg-[#0f0f17] border border-white/5 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5">
+            <h2 className="text-sm font-semibold text-white">Sign in</h2>
+          </div>
 
-            navigate("/dashboard");
-        } catch (error) {
-            setMessage(
-                error?.response?.data?.message ||
-                "Login failed"
-            );
-        } finally {
-            setLoading(false);
-        }
+          <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-4">
+            {message && (
+              <div className="text-xs px-4 py-3 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+                {message}
+              </div>
+            )}
 
-
-    };
-
-    return (<div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-
-        <div className="absolute w-72 h-72 bg-yellow-500/20 blur-3xl rounded-full top-10 left-10"></div>
-        <div className="absolute w-72 h-72 bg-blue-500/20 blur-3xl rounded-full bottom-10 right-10"></div>
-
-        <div className="relative w-full max-w-md">
-
-            <div className="text-center mb-8">
-                <h1 className="text-5xl font-bold text-white">
-                    CryptoSim
-                </h1>
-
-                <p className="text-slate-400 mt-3">
-                    Practice trading without risking real money
+            {/* Email */}
+            <div>
+              <label className="text-xs text-slate-500 block mb-1.5">
+                Email
+              </label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                className="w-full bg-white/5 border border-white/8 rounded-lg px-4 py-2.5 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-white/20 transition-colors"
+                {...register("email", { required: "Email is required" })}
+              />
+              {errors.email && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.email.message}
                 </p>
+              )}
             </div>
 
-            <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-8 shadow-2xl"
-            >
-                <h2 className="text-2xl font-semibold text-white text-center mb-6">
-                    Welcome Back
-                </h2>
-
-                {message && (
-                    <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                        <p className="text-red-400 text-sm text-center">
-                            {message}
-                        </p>
-                    </div>
-                )}
-
-                <div className="mb-4">
-                    <label className="block text-slate-300 mb-2 text-sm">
-                        Email Address
-                    </label>
-
-                    <input
-                        type="email"
-                        placeholder="Enter your email"
-                        className="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        {...register("email", {
-                            required: "Email is required",
-                        })}
-                    />
-
-                    {errors.email && (
-                        <p className="text-red-400 text-sm mt-1">
-                            {errors.email.message}
-                        </p>
-                    )}
-                </div>
-
-                <div className="mb-6">
-                    <label className="block text-slate-300 mb-2 text-sm">
-                        Password
-                    </label>
-
-                    <input
-                        type="password"
-                        placeholder="Enter your password"
-                        className="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        {...register("password", {
-                            required: "Password is required",
-                        })}
-                    />
-
-                    {errors.password && (
-                        <p className="text-red-400 text-sm mt-1">
-                            {errors.password.message}
-                        </p>
-                    )}
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-bold transition duration-200 disabled:opacity-50"
-                >
-                    {loading ? "Logging in..." : "Login"}
-                </button>
-
-                <div className="my-6 flex items-center">
-                    <div className="flex-1 border-t border-slate-700"></div>
-                    <span className="px-3 text-slate-500 text-sm">
-                        OR
-                    </span>
-                    <div className="flex-1 border-t border-slate-700"></div>
-                </div>
-
-                <p className="text-center text-slate-400">
-                    New to CryptoSim?{" "}
-                    <Link
-                        to="/register"
-                        className="text-yellow-500 hover:text-yellow-400 font-medium"
-                    >
-                        Create Account
-                    </Link>
+            {/* Password */}
+            <div>
+              <label className="text-xs text-slate-500 block mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                className="w-full bg-white/5 border border-white/8 rounded-lg px-4 py-2.5 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-white/20 transition-colors"
+                {...register("password", { required: "Password is required" })}
+              />
+              {errors.password && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.password.message}
                 </p>
-            </form>
+              )}
+            </div>
 
-            <p className="text-center text-slate-600 text-sm mt-6">
-                Simulated trading • No real money involved
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-black transition-all disabled:opacity-50 mt-1"
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+
+            <p className="text-center text-xs text-slate-500 pt-1">
+              No account?{" "}
+              <Link
+                to="/register"
+                className="text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                Create one
+              </Link>
             </p>
+          </form>
         </div>
+      </div>
     </div>
-
-
-    );
+  );
 };
 
 export default Login;

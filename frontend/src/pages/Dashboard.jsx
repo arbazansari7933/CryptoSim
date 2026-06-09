@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import socket from "../services/socket";
-import api from "../services/api";
-
+import Layout from "../components/Layout";
 import {
   LineChart,
   Line,
@@ -12,214 +11,205 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const COINS = ["BTC", "ETH", "SOL", "DOGE", "ADA", "XRP"];
+
+const COIN_COLORS = {
+  BTC: "#f7931a",
+  ETH: "#627eea",
+  SOL: "#9945ff",
+  DOGE: "#c2a633",
+  ADA: "#0033ad",
+  XRP: "#346aa9",
+};
+
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#111118] border border-white/10 px-3 py-2 rounded-lg text-xs">
+        <p className="text-slate-400">Price</p>
+        <p className="text-white font-semibold">
+          ₹{Number(payload[0].value).toLocaleString("en-IN")}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard = () => {
-  const navigate = useNavigate();
-
-  const [market, setMarket] = useState({
-    BTC: 0,
-    ETH: 0,
-    SOL: 0,
-    DOGE: 0,
-    ADA: 0,
-    XRP: 0,
-  });
-  const [priceHistory, setPriceHistory] = useState({
-    BTC: [],
-    ETH: [],
-    SOL: [],
-    DOGE: [],
-    ADA: [],
-    XRP: [],
-  });
+  const [market, setMarket] = useState(
+    Object.fromEntries(COINS.map((c) => [c, 0]))
+  );
+  const [priceHistory, setPriceHistory] = useState(
+    Object.fromEntries(COINS.map((c) => [c, []]))
+  );
   const [prevMarket, setPrevMarket] = useState({});
-
-  const [selectedCoin, setSelectedCoin] =
-    useState("BTC");
-
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  const [selectedCoin, setSelectedCoin] = useState("BTC");
 
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Frontend Connected");
-    });
-    socket.onAny((event, ...args) => {
-      console.log("EVENT:", event);
-      console.log(args);
-    });
     socket.on("marketUpdate", (data) => {
-      setMarket((currentMarket) => {
-        setPrevMarket(currentMarket);
+      setMarket((curr) => {
+        setPrevMarket(curr);
         return data;
       });
     });
     socket.on("marketHistory", (data) => {
-      console.log("RECEIVED FROM  SOCKET:");
-      console.log(data);
-      console.log("Market History:", data);
       setPriceHistory(data);
     });
     return () => {
-      socket.off("connect");
       socket.off("marketUpdate");
       socket.off("marketHistory");
     };
   }, []);
-  console.log("CURRENT PRICE HISTORY");
-  console.log(priceHistory);
-  const chartData = (
-    priceHistory?.[selectedCoin] || []
-  ).map((price, index) => ({
-    time: index + 1,
-    price,
-  }));
-  console.log("selectedCoin:", selectedCoin);
-  console.log("priceHistory:", priceHistory);
+
+  const chartData = (priceHistory?.[selectedCoin] || []).map(
+    (price, index) => ({ time: index + 1, price })
+  );
+
+  const getChange = (coin) => {
+    if (!prevMarket[coin] || prevMarket[coin] === 0) return null;
+    return (
+      ((market[coin] - prevMarket[coin]) / prevMarket[coin]) *
+      100
+    ).toFixed(2);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">
-          CryptoSim Dashboard
-        </h1>
+    <Layout>
+      {/* Section: Live Market */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-lg font-semibold text-white">Live Market</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Prices update every 30 seconds
+            </p>
+          </div>
+          <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            Live
+          </span>
+        </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => navigate("/portfolio")}
-            className="bg-blue-600 px-4 py-2 rounded-lg"
-          >
-            Portfolio
-          </button>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {COINS.map((coin) => {
+            const change = getChange(coin);
+            const isUp = change !== null && parseFloat(change) >= 0;
+            const isDown = change !== null && parseFloat(change) < 0;
 
-          <button
-            onClick={() => navigate("/buy")}
-            className="bg-green-600 px-4 py-2 rounded-lg"
-          >
-            Buy
-          </button>
-
-          <button
-            onClick={() => navigate("/sell")}
-            className="bg-yellow-600 px-4 py-2 rounded-lg"
-          >
-            Sell
-          </button>
-
-          <button
-            onClick={() => navigate("/history")}
-            className="bg-purple-600 px-4 py-2 rounded-lg"
-          >
-            History
-          </button>
-          <button
-            onClick={() => navigate("/orders")}
-            className="bg-cyan-600 px-4 py-2 rounded-lg"
-          >
-            Orders
-          </button>
-          <button
-            onClick={() => navigate("/leaderboard")}
-            className="bg-yellow-500 text-black px-4 py-2 rounded"
-          >
-            Leaderboard
-          </button>
-          <button
-            onClick={() =>
-              navigate("/settings")
-            }
-            className="bg-slate-700 px-4 py-2 rounded-lg"
-          >
-            Settings
-          </button>
+            return (
+              <button
+                key={coin}
+                onClick={() => setSelectedCoin(coin)}
+                className={`text-left p-4 rounded-xl border transition-all ${
+                  selectedCoin === coin
+                    ? "bg-white/5 border-white/20"
+                    : "bg-[#0f0f17] border-white/5 hover:border-white/10"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded"
+                    style={{
+                      backgroundColor: COIN_COLORS[coin] + "22",
+                      color: COIN_COLORS[coin],
+                    }}
+                  >
+                    {coin}
+                  </span>
+                  {change !== null && (
+                    <span
+                      className={`text-xs font-medium ${
+                        isUp ? "text-emerald-400" : "text-red-400"
+                      }`}
+                    >
+                      {isUp ? "▲" : "▼"} {Math.abs(change)}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-lg font-bold text-white mt-1">
+                  ₹{Number(market[coin]).toLocaleString("en-IN")}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Market */}
-      <h2 className="text-2xl font-semibold mb-4">
-        Live Market
-      </h2>
+      {/* Section: Chart */}
+      <div className="bg-[#0f0f17] border border-white/5 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-sm font-semibold text-white">
+              Price History
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Last {chartData.length} snapshots
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {Object.entries(market).map(([coin, price]) => {
-
-          const change = prevMarket[coin]
-            ? (
-              ((price - prevMarket[coin]) /
-                prevMarket[coin]) *
-              100
-            ).toFixed(2)
-            : null;
-
-          return (
-            <div
-              key={coin}
-              className="bg-slate-900 p-5 rounded-xl border border-slate-800"
-            >
-              <p className="text-slate-400 text-sm">
+          {/* Coin selector */}
+          <div className="flex gap-1">
+            {COINS.map((coin) => (
+              <button
+                key={coin}
+                onClick={() => setSelectedCoin(coin)}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                  selectedCoin === coin
+                    ? "text-white"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+                style={
+                  selectedCoin === coin
+                    ? {
+                        backgroundColor: COIN_COLORS[coin] + "30",
+                        color: COIN_COLORS[coin],
+                      }
+                    : {}
+                }
+              >
                 {coin}
-              </p>
-              <p className="text-2xl font-bold mt-2">
-                ₹ {Number(price).toLocaleString()}
-              </p>
+              </button>
+            ))}
+          </div>
+        </div>
 
-              {change !== null && (
-                <p
-                  className={
-                    change >= 0
-                      ? "text-green-400 text-sm"
-                      : "text-red-400 text-sm"
-                  }
-                >
-                  {change >= 0 ? "▲" : "▼"}{" "}
-                  {Math.abs(change)}%
-                </p>
-              )}
-            </div>
-          );
-        })}
+        {chartData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-slate-600 text-sm">
+            Waiting for price data...
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={chartData}>
+              <XAxis
+                dataKey="time"
+                tick={{ fill: "#475569", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: "#475569", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) =>
+                  "₹" + Number(v).toLocaleString("en-IN")
+                }
+                width={80}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Line
+                type="monotone"
+                dataKey="price"
+                stroke={COIN_COLORS[selectedCoin]}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: COIN_COLORS[selectedCoin] }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
-      <select
-        value={selectedCoin}
-        onChange={(e) =>
-          setSelectedCoin(e.target.value)
-        }
-        className="bg-slate-900 p-2 rounded mt-8 mb-4"
-      >
-        {Object.keys(market).map((coin) => (
-          <option key={coin}>
-            {coin}
-          </option>
-        ))}
-      </select>
-
-      <div className="mt-6 bg-slate-900 p-6 rounded-xl">
-        <h2 className="text-2xl font-bold mb-4">
-          {selectedCoin} Price History
-        </h2>
-
-        <ResponsiveContainer
-          width="100%"
-          height={300}
-        >
-          <LineChart data={chartData}>
-            <XAxis dataKey="time" />
-            <YAxis />
-            <Tooltip />
-
-            <Line
-              type="monotone"
-              dataKey="price"
-              stroke="#22c55e"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-    </div>
+    </Layout>
   );
 };
 
