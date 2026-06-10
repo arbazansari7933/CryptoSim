@@ -9,7 +9,7 @@
 
 A real-time crypto trading simulator built with the MERN stack and Socket.IO. Every user starts with ₹1,00,000 virtual money and trades live coin prices fetched from CoinGecko every 30 seconds. Place market orders or set limit orders that auto-execute when the price hits your target. No real money. Real market behaviour.
 
-🔴 Live Demo (Coming Soon) | [⌥ GitHub](https://github.com/arbazansari7933/CryptoSim)
+🔴 [Live Demo](https://cryptosim-gamma.vercel.app/) | [⌥ GitHub](https://github.com/arbazansari7933/CryptoSim)
 ---
 
 ## The Problem This Solves
