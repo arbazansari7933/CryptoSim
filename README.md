@@ -14,24 +14,40 @@ A real-time crypto trading simulator built with the MERN stack and Socket.IO. Ev
 ---
 ## Screenshots
 
-### Dashboard
-![Dashboard](./screenshots/dashboard.png)
+<table>
+  <tr>
+    <td align="center">
+      <b>Dashboard</b><br>
+      <img src="./screenshots/dashboard.png" width="450"/>
+    </td>
+    <td align="center">
+      <b>Trade</b><br>
+      <img src="./screenshots/trade.png" width="450"/>
+    </td>
+  </tr>
 
-### Trade
-![Trade](./screenshots/trade.png)
+  <tr>
+    <td align="center">
+      <b>Portfolio</b><br>
+      <img src="./screenshots/portfolio.png" width="450"/>
+    </td>
+    <td align="center">
+      <b>Orders</b><br>
+      <img src="./screenshots/order.png" width="450"/>
+    </td>
+  </tr>
 
-### Portfolio
-![Portfolio](./screenshots/portfolio.png)
-
-### Orders
-![Orders](./screenshots/order.png)
-
-### Transaction History
-![History](./screenshots/history.png)
-
-### Leaderboard
-![Leaderboard](./screenshots/leaderboard.png)
-
+  <tr>
+    <td align="center">
+      <b>History</b><br>
+      <img src="./screenshots/history.png" width="450"/>
+    </td>
+    <td align="center">
+      <b>Leaderboard</b><br>
+      <img src="./screenshots/leaderboard.png" width="450"/>
+    </td>
+  </tr>
+</table>
 ## Features
 
 - Real-time crypto prices via CoinGecko
