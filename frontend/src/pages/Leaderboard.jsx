@@ -6,8 +6,7 @@ import Layout from "../components/Layout";
 export const Leaderboard = () => {
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const myId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
-
+  const myId = JSON.parse(atob(localStorage.getItem("token").split(".")[1])).id;
   useEffect(() => {
     api
       .get("auth/leaderboard")

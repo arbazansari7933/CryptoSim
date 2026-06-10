@@ -28,6 +28,7 @@ export const getLeaderboard = async (req, res) => {
             const totalValue = user.walletBalance + portfolioValue;
             leaderboard.push({
                 name: user.name,
+                _id: user._id.toString(),
                 totalValue,
             })
         }
