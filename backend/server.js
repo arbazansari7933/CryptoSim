@@ -10,7 +10,7 @@ import portfolioRoutes from "./routes/portfolioRoutes.js";
 import tradeRoutes from "./routes/tradeRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
-import { startMarketEngine } from "./market/marketEngine.js";
+import { startBinanceFeed } from "./market/binanceEngine.js";
 import { marketState } from "./market/marketState.js";
 import resetRoutes from "./routes/resetRoutes.js";
 //import socket from "./socket.js";
@@ -98,8 +98,7 @@ io.on("connection", (socket) => {
   socket.emit("marketHistory", marketHistory);
 
 });
-startMarketEngine(io);
-
+startBinanceFeed(io);
 
 const PORT = process.env.PORT || 5000;
 

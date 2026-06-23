@@ -82,7 +82,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-lg font-semibold text-white">Live Market</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Prices update every 30 seconds
+              Real-time market data
             </p>
           </div>
           <span className="flex items-center gap-1.5 text-xs text-emerald-400">

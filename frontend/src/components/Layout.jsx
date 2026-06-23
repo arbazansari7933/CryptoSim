@@ -211,7 +211,7 @@ const Layout = ({ children, walletBalance }) => {
       <footer className="border-t border-white/5 py-4">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-xs text-slate-600">
           <span>CryptoSim — virtual trading only, no real money</span>
-          <span>Prices via CoinGecko · updates every 30s</span>
+          <span>Live prices via Binance WebSocket</span>
         </div>
       </footer>
     </div>

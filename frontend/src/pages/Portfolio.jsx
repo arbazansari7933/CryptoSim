@@ -98,7 +98,7 @@ const Portfolio = () => {
       <div className="mb-8">
         <h1 className="text-lg font-semibold text-white">Portfolio</h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Live P&amp;L updates every 30 seconds
+          Real-time P&L based on live market data
         </p>
       </div>
 
