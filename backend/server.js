@@ -4,7 +4,6 @@ import connectDB from "./config/db.js";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import WebSocket from "ws";
 import jwt from "jsonwebtoken";
 import authRoutes from "./routes/authRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
@@ -55,20 +54,7 @@ app.use( "/api/auth/orders", orderRoutes );
 app.get("/api", (req, res) => {
   res.send("Backend is running!");
 });
-app.get("/test-binance", (req, res) => {
-  const ws = new WebSocket(
-    "wss://stream.binance.com/ws/btcusdt@ticker"
-  );
 
-  ws.on("open", () => {
-    res.send("Binance Connected");
-    ws.close();
-  });
-
-  ws.on("error", (err) => {
-    res.send(`Error: ${err.message}`);
-  });
-});
 
 
 io.use((socket, next) => {
