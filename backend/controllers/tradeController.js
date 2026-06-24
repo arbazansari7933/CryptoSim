@@ -44,6 +44,10 @@ export const buyCoin = async (req, res) => {
 
         portfolio[coin].quantity = totalQuantity;
         portfolio[coin].avgBuyPrice = newAvgPrice;
+
+        await user.save();
+        await portfolio.save();
+
         const tx=await Transaction.create({
             userId: req.user._id,
             coin,
@@ -52,8 +56,6 @@ export const buyCoin = async (req, res) => {
             price: currentPrice,
             totalAmount: costToBuy,
         });
-        await user.save();
-        await portfolio.save();
 
         res.status(200).json({
             message: "Transaction Successfully !",
@@ -110,6 +112,10 @@ export const sellCoin = async (req, res) => {
         if (portfolio[coin].quantity === 0) {
             portfolio[coin].avgBuyPrice = 0;
         }
+
+        await user.save();
+        await portfolio.save();
+
         const tx=await Transaction.create({
             userId: req.user._id,
             coin,
@@ -118,8 +124,6 @@ export const sellCoin = async (req, res) => {
             price: currentPrice,
             totalAmount: sellValue,
         });
-        await user.save();
-        await portfolio.save();
 
         res.status(200).json({
             message: "Transaction Successfully !",

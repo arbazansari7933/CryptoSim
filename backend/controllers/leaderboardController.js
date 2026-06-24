@@ -6,8 +6,6 @@ export const getLeaderboard = async (req, res) => {
     try {
         const users = await User.find();
         const leaderboard = [];
-        //console.log("1");
-
         for (const user of users) {
             const portfolio = await Portfolio.findOne({ userId: user._id });
             if (!portfolio) {

@@ -62,12 +62,12 @@ const History = () => {
                 >
                   {tx.type}
                 </span>
-                <span className="text-sm text-white">{tx.coin}</span>
-                <span className="text-sm text-slate-300">{tx.quantity}</span>
-                <span className="text-sm text-slate-300">
+                <span className="text-xs text-white">{tx.coin}</span>
+                <span className="text-xs text-slate-300">{tx.quantity}</span>
+                <span className="text-xs text-slate-300">
                   ₹{Number(tx.price).toLocaleString("en-IN")}
                 </span>
-                <span className="text-sm text-white font-medium">
+                <span className="text-xs text-white font-medium">
                   ₹{Number(tx.totalAmount).toLocaleString("en-IN", {
                     maximumFractionDigits: 2,
                   })}

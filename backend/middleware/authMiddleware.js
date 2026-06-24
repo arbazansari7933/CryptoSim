@@ -32,8 +32,8 @@ export const authMiddleware = async (req, res, next) => {
     //  Attach user to request object
     req.user = user;
     //  Continue to next route
-    console.log("Decoded:", decoded);
-console.log("User:", user);
+    //console.log("Decoded:", decoded);
+//console.log("User:", user);
     next();
 
 }

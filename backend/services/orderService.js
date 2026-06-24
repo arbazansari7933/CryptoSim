@@ -7,148 +7,214 @@ export const processOrders = async (
   coin,
   currentPrice
 ) => {
-  const pendingOrders = await Order.find({
-    coin,
-    status: "PENDING",
-  });
+  try {
+    const pendingOrders = await Order.find({
+      coin,
+      status: "PENDING",
+    });
 
-  for (const order of pendingOrders) {
+    for (const order of pendingOrders) {
 
-    if (
-      order.type === "BUY" &&
-      currentPrice <= order.targetPrice
-    ) {
+      // LOCK ORDER
+      const lockedOrder =
+        await Order.findOneAndUpdate(
+          {
+            _id: order._id,
+            status: "PENDING",
+          },
+          {
+            status: "PROCESSING",
+          },
+          {
+            new: true,
+          }
+        );
 
-      const user =
-        await User.findById(order.userId);
+      if (!lockedOrder) continue;
 
-      const portfolio =
-        await Portfolio.findOne({
-          userId: order.userId,
+      // BUY ORDER
+      if (
+        lockedOrder.type === "BUY" &&
+        currentPrice <= lockedOrder.targetPrice
+      ) {
+        const user =
+          await User.findById(
+            lockedOrder.userId
+          );
+
+        const portfolio =
+          await Portfolio.findOne({
+            userId: lockedOrder.userId,
+          });
+
+        if (!user || !portfolio) {
+          lockedOrder.status = "PENDING";
+          await lockedOrder.save();
+          continue;
+        }
+
+        const cost =
+          lockedOrder.quantity *
+          currentPrice;
+
+        if (
+          user.walletBalance < cost
+        ) {
+          lockedOrder.status = "PENDING";
+          await lockedOrder.save();
+          continue;
+        }
+
+        user.walletBalance -= cost;
+
+        const oldQuantity =
+          portfolio[coin].quantity;
+
+        const oldAvgPrice =
+          portfolio[coin].avgBuyPrice;
+
+        const totalQuantity =
+          oldQuantity +
+          lockedOrder.quantity;
+
+        const newAvgPrice =
+          (
+            oldQuantity *
+              oldAvgPrice +
+            lockedOrder.quantity *
+              currentPrice
+          ) / totalQuantity;
+
+        portfolio[coin].quantity =
+          totalQuantity;
+
+        portfolio[coin].avgBuyPrice =
+          newAvgPrice;
+
+        await user.save();
+        await portfolio.save();
+
+        await Transaction.create({
+          userId:
+            lockedOrder.userId,
+          coin,
+          type: "BUY",
+          quantity:
+            lockedOrder.quantity,
+          price: currentPrice,
+          totalAmount: cost,
         });
 
-      if (!user || !portfolio)
-        continue;
+        lockedOrder.status =
+          "EXECUTED";
 
-      const cost =
-        order.quantity * currentPrice;
+        lockedOrder.executedPrice =
+          currentPrice;
 
-      if (user.walletBalance < cost)
-        continue;
+        lockedOrder.executedAt =
+          new Date();
 
-      user.walletBalance -= cost;
+        await lockedOrder.save();
 
-      const oldQuantity =
-        portfolio[coin].quantity;
+        console.log(
+          "BUY EXECUTED",
+          lockedOrder._id
+        );
+      }
 
-      const oldAvgPrice =
-        portfolio[coin].avgBuyPrice;
+      // SELL ORDER
+      else if (
+        lockedOrder.type === "SELL" &&
+        currentPrice >=
+          lockedOrder.targetPrice
+      ) {
+        const user =
+          await User.findById(
+            lockedOrder.userId
+          );
 
-      const totalQuantity =
-        oldQuantity + order.quantity;
+        const portfolio =
+          await Portfolio.findOne({
+            userId: lockedOrder.userId,
+          });
 
-      const newAvgPrice =
-        (
-          oldQuantity *
-          oldAvgPrice +
-          order.quantity *
-          currentPrice
-        ) / totalQuantity;
+        if (!user || !portfolio) {
+          lockedOrder.status = "PENDING";
+          await lockedOrder.save();
+          continue;
+        }
 
-      portfolio[coin].quantity =
-        totalQuantity;
+        if (
+          portfolio[coin]
+            .quantity <
+          lockedOrder.quantity
+        ) {
+          lockedOrder.status = "PENDING";
+          await lockedOrder.save();
+          continue;
+        }
 
-      portfolio[coin].avgBuyPrice =
-        newAvgPrice;
+        const revenue =
+          lockedOrder.quantity *
+          currentPrice;
 
-      await user.save();
-      await portfolio.save();
+        user.walletBalance +=
+          revenue;
 
-      await Transaction.create({
-        userId: order.userId,
-        coin,
-        type: "BUY",
-        quantity: order.quantity,
-        price: currentPrice,
-        totalAmount: cost,
-      });
+        portfolio[coin].quantity -=
+          lockedOrder.quantity;
 
-      order.status = "EXECUTED";
-      order.executedPrice =
-        currentPrice;
-      order.executedAt =
-        new Date();
+        if (
+          portfolio[coin]
+            .quantity === 0
+        ) {
+          portfolio[coin].avgBuyPrice =
+            0;
+        }
 
-      await order.save();
+        await user.save();
+        await portfolio.save();
 
-      console.log(
-        "BUY EXECUTED",
-        order._id
-      );
-    }
-
-    else if (
-      order.type === "SELL" &&
-      currentPrice >= order.targetPrice
-    ) {
-
-      const user =
-        await User.findById(order.userId);
-
-      const portfolio =
-        await Portfolio.findOne({
-          userId: order.userId,
+        await Transaction.create({
+          userId:
+            lockedOrder.userId,
+          coin,
+          type: "SELL",
+          quantity:
+            lockedOrder.quantity,
+          price: currentPrice,
+          totalAmount: revenue,
         });
 
-      if (!user || !portfolio)
-        continue;
+        lockedOrder.status =
+          "EXECUTED";
 
-      if (
-        portfolio[coin].quantity <
-        order.quantity
-      ) {
-        continue;
+        lockedOrder.executedPrice =
+          currentPrice;
+
+        lockedOrder.executedAt =
+          new Date();
+
+        await lockedOrder.save();
+
+        console.log(
+          "SELL EXECUTED",
+          lockedOrder._id
+        );
       }
 
-      const revenue =
-        order.quantity * currentPrice;
+      // PRICE NOT REACHED
+      else {
+        lockedOrder.status =
+          "PENDING";
 
-      user.walletBalance += revenue;
-
-      portfolio[coin].quantity -=
-        order.quantity;
-
-      if (
-        portfolio[coin].quantity === 0
-      ) {
-        portfolio[coin].avgBuyPrice = 0;
+        await lockedOrder.save();
       }
-
-      await user.save();
-      await portfolio.save();
-
-      await Transaction.create({
-        userId: order.userId,
-        coin,
-        type: "SELL",
-        quantity: order.quantity,
-        price: currentPrice,
-        totalAmount: revenue,
-      });
-
-      order.status = "EXECUTED";
-      order.executedPrice =
-        currentPrice;
-
-      order.executedAt =
-        new Date();
-
-      await order.save();
-
-      console.log(
-        "SELL EXECUTED",
-        order._id
-      );
     }
+  } catch (error) {
+    console.error(
+      "Order Processing Error:",
+      error.message
+    );
   }
 };
