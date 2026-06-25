@@ -53,44 +53,26 @@ export const startCoinbaseFeed = (io) => {
 
       marketState[coin] = inrPrice;
 
-      await processOrders(
-        coin,
-        inrPrice
-      );
+      await processOrders( coin, inrPrice );
 
-      marketHistory[coin].push(
-        inrPrice
-      );
+      marketHistory[coin].push( inrPrice );
 
-      if (
-        marketHistory[coin].length > 100
-      ) {
+      if ( marketHistory[coin].length > 100 ) {
         marketHistory[coin].shift();
       }
 
       if (io) {
-        io.emit(
-          "marketUpdate",
-          marketState
-        );
+        io.emit( "marketUpdate", marketState );
 
-        io.emit(
-          "marketHistory",
-          marketHistory
-        );
+        io.emit( "marketHistory", marketHistory );
       }
     } catch (err) {
-      console.error(
-        "Coinbase Parse Error:",
-        err
-      );
+      console.error( "Coinbase Parse Error:", err );
     }
   });
 
   ws.on("close", () => {
-    console.log(
-      "Coinbase disconnected"
-    );
+    console.log( "Coinbase disconnected" );
 
     setTimeout(() => {
       startCoinbaseFeed(io);
@@ -98,9 +80,6 @@ export const startCoinbaseFeed = (io) => {
   });
 
   ws.on("error", (err) => {
-    console.error(
-      "Coinbase WebSocket Error:",
-      err
-    );
+    console.error( "Coinbase WebSocket Error:", err );
   });
 };

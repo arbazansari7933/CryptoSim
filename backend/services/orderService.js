@@ -1,17 +1,10 @@
 import Order from "../models/Order.js";
-import Portfolio from "../models/Portfolio.js";
-import User from "../models/User.js";
-import Transaction from "../models/Transaction.js";
+import { executeBuy, executeSell } from "./tradeService.js";
+import mongoose from "mongoose";
 
-export const processOrders = async (
-  coin,
-  currentPrice
-) => {
+export const processOrders = async (coin, currentPrice) => {
   try {
-    const pendingOrders = await Order.find({
-      coin,
-      status: "PENDING",
-    });
+    const pendingOrders = await Order.find({ coin, status: "PENDING", });
 
     for (const order of pendingOrders) {
 
@@ -29,192 +22,58 @@ export const processOrders = async (
             new: true,
           }
         );
-
+      // someone else already grabbed this order
       if (!lockedOrder) continue;
 
-      // BUY ORDER
-      if (
-        lockedOrder.type === "BUY" &&
-        currentPrice <= lockedOrder.targetPrice
-      ) {
-        const user =
-          await User.findById(
-            lockedOrder.userId
-          );
+      const shouldExecuteBuy = lockedOrder.type === "BUY" && currentPrice <= lockedOrder.targetPrice;
+      const shouldExecuteSell = lockedOrder.type === "SELL" && currentPrice >= lockedOrder.targetPrice;
 
-        const portfolio =
-          await Portfolio.findOne({
-            userId: lockedOrder.userId,
-          });
-
-        if (!user || !portfolio) {
-          lockedOrder.status = "PENDING";
-          await lockedOrder.save();
-          continue;
-        }
-
-        const cost =
-          lockedOrder.quantity *
-          currentPrice;
-
-        if (
-          user.walletBalance < cost
-        ) {
-          lockedOrder.status = "PENDING";
-          await lockedOrder.save();
-          continue;
-        }
-
-        user.walletBalance -= cost;
-
-        const oldQuantity =
-          portfolio[coin].quantity;
-
-        const oldAvgPrice =
-          portfolio[coin].avgBuyPrice;
-
-        const totalQuantity =
-          oldQuantity +
-          lockedOrder.quantity;
-
-        const newAvgPrice =
-          (
-            oldQuantity *
-              oldAvgPrice +
-            lockedOrder.quantity *
-              currentPrice
-          ) / totalQuantity;
-
-        portfolio[coin].quantity =
-          totalQuantity;
-
-        portfolio[coin].avgBuyPrice =
-          newAvgPrice;
-
-        await user.save();
-        await portfolio.save();
-
-        await Transaction.create({
-          userId:
-            lockedOrder.userId,
-          coin,
-          type: "BUY",
-          quantity:
-            lockedOrder.quantity,
-          price: currentPrice,
-          totalAmount: cost,
-        });
-
-        lockedOrder.status =
-          "EXECUTED";
-
-        lockedOrder.executedPrice =
-          currentPrice;
-
-        lockedOrder.executedAt =
-          new Date();
-
+      // Price condition not met yet — release the lock, try again next tick.
+      if (!shouldExecuteBuy && !shouldExecuteSell) {
+        lockedOrder.status = "PENDING";
         await lockedOrder.save();
-
-        console.log(
-          "BUY EXECUTED",
-          lockedOrder._id
-        );
+        continue;
       }
 
-      // SELL ORDER
-      else if (
-        lockedOrder.type === "SELL" &&
-        currentPrice >=
-          lockedOrder.targetPrice
-      ) {
-        const user =
-          await User.findById(
-            lockedOrder.userId
-          );
-
-        const portfolio =
-          await Portfolio.findOne({
-            userId: lockedOrder.userId,
-          });
-
-        if (!user || !portfolio) {
-          lockedOrder.status = "PENDING";
-          await lockedOrder.save();
-          continue;
-        }
-
-        if (
-          portfolio[coin]
-            .quantity <
-          lockedOrder.quantity
-        ) {
-          lockedOrder.status = "PENDING";
-          await lockedOrder.save();
-          continue;
-        }
-
-        const revenue =
-          lockedOrder.quantity *
-          currentPrice;
-
-        user.walletBalance +=
-          revenue;
-
-        portfolio[coin].quantity -=
-          lockedOrder.quantity;
-
-        if (
-          portfolio[coin]
-            .quantity === 0
-        ) {
-          portfolio[coin].avgBuyPrice =
-            0;
-        }
-
-        await user.save();
-        await portfolio.save();
-
-        await Transaction.create({
-          userId:
-            lockedOrder.userId,
-          coin,
-          type: "SELL",
-          quantity:
-            lockedOrder.quantity,
-          price: currentPrice,
-          totalAmount: revenue,
+      const session = await mongoose.startSession();
+      let executed = false;
+      try {
+        await session.withTransaction(async () => {
+          if (shouldExecuteBuy) {
+            await executeBuy(lockedOrder, coin, currentPrice, session);
+          }
+          else {
+            await executeSell(lockedOrder, coin, currentPrice, session);
+          }
+          lockedOrder.status = "EXECUTED";
+          lockedOrder.executedPrice = currentPrice;
+          lockedOrder.executedAt = new Date();
+          await lockedOrder.save({ session });
+          executed = true;
         });
-
-        lockedOrder.status =
-          "EXECUTED";
-
-        lockedOrder.executedPrice =
-          currentPrice;
-
-        lockedOrder.executedAt =
-          new Date();
-
-        await lockedOrder.save();
-
-        console.log(
-          "SELL EXECUTED",
-          lockedOrder._id
-        );
+        if (executed) {
+          console.log(`${lockedOrder.type} EXECUTED `, lockedOrder._id.toString());
+        }
+      } catch (error) {
+        console.log(`Order ${lockedOrder._id} failed: ${error.message}`);
       }
-
-      // PRICE NOT REACHED
-      else {
-        lockedOrder.status =
-          "PENDING";
-
-        await lockedOrder.save();
+      finally {
+        await session.endSession();
+      }
+      // Release lock if transaction failed
+      if (!executed) {
+        await Order.updateOne(
+          { _id: lockedOrder._id },
+          {
+            $set: {
+              status: "PENDING",
+            },
+          }
+        );
       }
     }
+
   } catch (error) {
-    console.error(
-      "Order Processing Error:",
-      error.message
-    );
+    console.error("Order Processing Error:", error.message);
   }
 };

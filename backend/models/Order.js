@@ -43,6 +43,7 @@ const orderSchema = new mongoose.Schema(
       enum: [
         "PENDING",
         "EXECUTED",
+        "PROCESSING",
         "CANCELLED",
       ],
       default: "PENDING",
