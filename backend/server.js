@@ -17,6 +17,8 @@ import resetRoutes from "./routes/resetRoutes.js";
 import { marketHistory } from "./market/marketState.js";
 import orderRoutes from "./routes/orderRoutes.js";
 
+import { updateExchangeRate } from "./services/exchangeRateService.js";
+
 //dotenv.config();
 await connectDB();
 const allowedOrigins = process.env.CLIENT_URI.split(",");
@@ -54,6 +56,8 @@ app.use( "/api/auth/orders", orderRoutes );
 app.get("/api", (req, res) => {
   res.send("Backend is running!");
 });
+await updateExchangeRate();
+setInterval(updateExchangeRate, 5 * 60 * 1000);
 
 
 

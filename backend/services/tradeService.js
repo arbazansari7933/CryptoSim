@@ -34,6 +34,7 @@ export async function executeBuy(order, coin, currentPrice, session) {
   if (!portfolio) {
     throw new Error("PORTFOLIO_NOT_FOUND");
   }
+  
 
   const holding = portfolio[coin];
 
@@ -81,6 +82,9 @@ export async function executeSell(order, coin, currentPrice, session) {
       new: true,
     }
   );
+  console.log("Coin:", coin);
+console.log("Order Qty:", order.quantity);
+console.log("Holding:", portfolio?.[coin]);
 
   if (!portfolio) {
     throw new Error("INSUFFICIENT_HOLDINGS");

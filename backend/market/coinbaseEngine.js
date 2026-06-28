@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { marketHistory, marketState } from "./marketState.js";
 import { processOrders } from "../services/orderService.js";
-
+import { getExchangeRate } from "../services/exchangeRateService.js";
 const symbolMap = {
   "BTC-USD": "BTC",
   "ETH-USD": "ETH",
@@ -16,7 +16,7 @@ export const startCoinbaseFeed = (io) => {
     "wss://ws-feed.exchange.coinbase.com"
   );
 
-  const USD_INR = 86;
+  //const USD_INR = 86;
 
   ws.on("open", () => {
     console.log("Connected to Coinbase");
@@ -49,7 +49,8 @@ export const startCoinbaseFeed = (io) => {
 
       const usdPrice = Number(msg.price);
 
-      const inrPrice = usdPrice * USD_INR;
+      const inrPrice = usdPrice * getExchangeRate();
+    
 
       marketState[coin] = inrPrice;
 
